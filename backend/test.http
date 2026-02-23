@@ -2,6 +2,6 @@ POST http://localhost:8081/api/execute
 Content-Type: application/json
 
 {
-  "code": "print('hello')",
-  "language": "python"
+  "code": "public class Hello { public static void main(String[] args) { System.out.println(\"Hello World!\"); } }",
+  "language": "java"
 }

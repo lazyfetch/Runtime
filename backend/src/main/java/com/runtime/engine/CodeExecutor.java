@@ -6,53 +6,112 @@ import com.runtime.model.ExecutionResult;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CodeExecutor {
 
     public ApiResponse<ExecutionResult> execute(String code, String language) {
         long startTime = System.currentTimeMillis();
+        Path tempDir = null;
 
         try {
-            String[] commandParts = buildCommand(code, language);
-            ProcessBuilder pb = new ProcessBuilder(commandParts);
+            String className = extractClassName(code);
 
-            Process process = pb.start();
-
-            // Read standard output
-            String output = readStream(process.getInputStream());
-
-            // Read error output
-            String errorOutput = readStream(process.getErrorStream());
-
-            // Wait with timeout (5 seconds)
-            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
-
-            if (!finished) {
-                process.destroyForcibly();
-                return ApiResponse.error("Execution timeout (5 seconds exceeded)");
+            if (className == null)
+            {
+                return ApiResponse.error("Could not extract class name. Make sure your class is public.");
             }
 
-            int exitCode = process.exitValue();
+            tempDir = Files.createTempDirectory("TempDirectory");
+            System.out.println("Temporary Directory created at:\n" + tempDir);
+
+            Path sourceFile = tempDir.resolve(className + ".java");
+            Files.writeString(sourceFile, code);
+
+            // Compile
+            ProcessBuilder pb = new ProcessBuilder("javac", sourceFile.toString());
+            pb.directory(tempDir.toFile());
+            Process process = pb.start();
+
+            boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+            if (!finished)
+            {
+                process.destroyForcibly();
+                return ApiResponse.error("Compilation timed out");
+            }
+
+            String compileErrors = readStream(process.getErrorStream());
+            int compileExit = process.exitValue();
+
+            if (compileExit != 0)
+            {
+                return ApiResponse.error("Compilation failed:\n" + compileErrors);
+            }
+
+            // Run
+            ProcessBuilder runner = new ProcessBuilder("java", "-cp", tempDir.toString(), className);
+            runner.directory(tempDir.toFile());
+            Process runProcess = runner.start();
+
+            String runOutput = readStream(runProcess.getInputStream());
+            String runErrors = readStream(runProcess.getErrorStream());
+
+            boolean runFinished = runProcess.waitFor(5, TimeUnit.SECONDS);
+            if (!runFinished)
+            {
+                runProcess.destroyForcibly();
+                return ApiResponse.error("Execution timed out (5 seconds exceeded).");
+            }
+
+            int exitCode = runProcess.exitValue();
             long executionTime = System.currentTimeMillis() - startTime;
 
-            // Combine output and errors
-            String finalOutput = output + (errorOutput.isEmpty() ? "" : "\nErrors:\n" + errorOutput);
-
+            String finalOutput = runOutput + (runErrors.isEmpty() ? "" : "\nErrors:\n" + runErrors);
             ExecutionResult result = new ExecutionResult(finalOutput, exitCode, executionTime);
 
-            if (exitCode == 0) {
+            if (exitCode == 0)
+            {
                 return ApiResponse.success("Execution completed", result);
-            } else {
+            }
+            else
+            {
                 return ApiResponse.error("Execution failed with exit code " + exitCode);
             }
 
-        } catch (IOException | InterruptedException e) {
+        }
+        catch (IOException | InterruptedException e)
+        {
             return ApiResponse.error("Execution error: " + e.getMessage());
+        }
+        finally
+        {
+            if (tempDir != null)
+            {
+                try
+                {
+                    Files.walk(tempDir).sorted(Comparator.reverseOrder())
+                            .forEach(path -> {
+                                try {
+                                    Files.delete(path);
+                                }
+                                catch (IOException ignored) {}
+                            });
+                } catch (IOException ignored) {}
+            }
         }
     }
 
-    // Helper method to read from input/error streams
+    private String extractClassName(String code) {
+        Pattern pattern = Pattern.compile("public\\s+class\\s+(\\w+)");
+        Matcher matcher = pattern.matcher(code);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
     private String readStream(java.io.InputStream inputStream) throws IOException {
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -62,11 +121,5 @@ public class CodeExecutor {
             }
         }
         return output.toString().trim();
-    }
-
-    // Helper method to build command based on language
-    private String[] buildCommand(String code, String language) {
-        // Placeholder - implement proper command building later
-        return new String[]{"java", "-version"};
     }
 }

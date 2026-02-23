@@ -11,7 +11,7 @@ public class ExecutionResult {
         this.executionTime = executionTime;
     }
 
-    // Getters and setters
+
     public String getOutput() {
         return output;
     }

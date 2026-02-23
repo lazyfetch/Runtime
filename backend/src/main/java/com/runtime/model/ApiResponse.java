@@ -10,8 +10,6 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
     }
-
-    // Static factory methods for convenience
     public static <T> ApiResponse<T> success(String message, T data) {
         return new ApiResponse<>(true, message, data);
     }
