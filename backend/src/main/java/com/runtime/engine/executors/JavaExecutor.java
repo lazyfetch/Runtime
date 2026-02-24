@@ -9,12 +9,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JavaExecutor implements LanguageExecutor {
+public class JavaExecutor extends BaseExecutor implements LanguageExecutor {
     @Override
     public ApiResponse<ExecutionResult> execute(String code)
     {
@@ -92,19 +91,7 @@ public class JavaExecutor implements LanguageExecutor {
         }
         finally
         {
-            if (tempDir != null)
-            {
-                try
-                {
-                    Files.walk(tempDir).sorted(Comparator.reverseOrder())
-                            .forEach(path -> {
-                                try {
-                                    Files.delete(path);
-                                }
-                                catch (IOException ignored) {}
-                            });
-                } catch (IOException ignored) {}
-            }
+            cleanup(tempDir);
         }
     }
 
@@ -114,14 +101,4 @@ public class JavaExecutor implements LanguageExecutor {
         return matcher.find() ? matcher.group(1) : null;
     }
 
-    private String readStream(java.io.InputStream inputStream) throws IOException {
-        StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-        }
-        return output.toString().trim();
-    }
 }
