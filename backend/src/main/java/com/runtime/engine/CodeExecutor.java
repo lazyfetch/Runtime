@@ -15,6 +15,7 @@ public class CodeExecutor {
     {
         executors.put("java", new JavaExecutor());
         executors.put("python", new PythonExecutor());
+        executors.put("c", new CExecutor());
     }
 
     public ApiResponse<ExecutionResult> execute(String code, String language)

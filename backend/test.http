@@ -15,3 +15,13 @@ Content-Type: application/json
   "language": "python"
 }
 
+###C###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "#include <stdio.h>\nint main() { printf(\"Hello World! from C\"); return 0; }",
+  "language": "c"
+}
+
+
