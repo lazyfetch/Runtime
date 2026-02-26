@@ -4,11 +4,11 @@ import com.runtime.engine.LanguageExecutor;
 import com.runtime.model.ApiResponse;
 import com.runtime.model.ExecutionResult;
 
-public class CExecutor extends BaseExecutor implements LanguageExecutor {
+public class CppExecutor extends BaseExecutor implements LanguageExecutor {
 
     @Override
     public ApiResponse<ExecutionResult> execute(String code)
     {
-        return executeCompiled(code, "Main.c", "gcc", null);
+        return executeCompiled(code, "Main.cpp", "g++", null);
     }
 }

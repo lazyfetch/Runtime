@@ -24,4 +24,11 @@ Content-Type: application/json
   "language": "c"
 }
 
+###C++###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
 
+{
+  "code": "#include <iostream>\nint main() { std::cout << \"Hello World! from C++\"; return 0; }",
+  "language": "cpp"
+}
