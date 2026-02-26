@@ -32,3 +32,13 @@ Content-Type: application/json
   "code": "#include <iostream>\nint main() { std::cout << \"Hello World! from C++\"; return 0; }",
   "language": "cpp"
 }
+
+
+###JavaScript##
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "console.log('Hello World! from JavaScript');",
+  "language": "js"
+}
