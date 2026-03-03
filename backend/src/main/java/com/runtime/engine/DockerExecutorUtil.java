@@ -111,7 +111,7 @@ public class DockerExecutorUtil {
             case "python" -> "main.py";
             case "c"      -> "main.c";
             case "cpp"    -> "main.cpp";
-            case "js"     -> "main.js";
+            case "javascript"     -> "main.js";
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
@@ -121,7 +121,7 @@ public class DockerExecutorUtil {
             case "java"   -> "eclipse-temurin:17";
             case "python" -> "python:3.11";
             case "c", "cpp" -> "gcc:latest";
-            case "js"     -> "node:18";
+            case "javascript"     -> "node:18";
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
@@ -135,7 +135,7 @@ public class DockerExecutorUtil {
             case "python" -> new String[]{"sh", "-c", "python main.py"};
             case "c"      -> new String[]{"sh", "-c", "gcc main.c -o main && ./main"};
             case "cpp"    -> new String[]{"sh", "-c", "g++ main.cpp -o main && ./main"};
-            case "js"     -> new String[]{"sh", "-c", "node main.js"};
+            case "javascript"     -> new String[]{"sh", "-c", "node main.js"};
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
