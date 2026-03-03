@@ -36,8 +36,6 @@ public abstract class BaseExecutor {
             } catch (IOException ignored) {}
         }
     }
-
-    // In BaseExecutor.java - add this shared method
     protected ApiResponse<ExecutionResult> executeCompiled(
             String code, String fileName, String compileCmd, String compilerFlag) {
         long startTime = System.currentTimeMillis();
