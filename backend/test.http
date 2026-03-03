@@ -42,3 +42,58 @@ Content-Type: application/json
   "code": "console.log('Hello World! from JavaScript');",
   "language": "js"
 }
+
+
+###Python-input###
+
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "name = input()\nprint('Hello', name)",
+  "language": "python",
+  "stdin": "Testing input in python..."
+}
+
+###Java-input###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "import java.util.Scanner;\npublic class Hello { public static void main(String[] args) { Scanner scanner = new Scanner(System.in); String name = scanner.nextLine(); System.out.println(\"Hello \" + name); } }",
+  "language": "java",
+  "stdin": "Testing input in java..."
+}
+
+####C-input###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "#include <stdio.h>\nint main() { char name[100]; scanf(\"%s\", name); printf(\"Hello %s\", name); return 0; }",
+  "language": "c",
+  "stdin": "TestinginputinC..."
+}
+
+###C++-input###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "#include <iostream>\n#include <string>\nint main() { std::string name; std::cin >> name; std::cout << \"Hello \" << name; return 0; }",
+  "language": "cpp",
+  "stdin": "TestinginputinC++..."
+}
+
+
+###JavaScript-input###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "process.stdin.resume();\nprocess.stdin.setEncoding('utf8');\nprocess.stdin.on('data', (name) => { console.log(`Hello ${name.trim()}`); });",
+  "language": "js",
+  "stdin": "TestinginputinJavaScript..."
+}
+
+

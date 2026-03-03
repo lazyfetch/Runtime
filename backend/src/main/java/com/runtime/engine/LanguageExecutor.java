@@ -5,5 +5,5 @@ import com.runtime.model.ExecutionResult;
 
 public interface LanguageExecutor
 {
-    ApiResponse<ExecutionResult> execute(String code);
+    ApiResponse<ExecutionResult> execute(String code,String stdin);
 }

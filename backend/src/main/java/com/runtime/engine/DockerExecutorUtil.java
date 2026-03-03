@@ -34,7 +34,7 @@ public class DockerExecutorUtil {
         this.dockerClient = DockerClientImpl.getInstance(config, httpClient);
     }
 
-    public ApiResponse<ExecutionResult> execute(String code, String language) {
+    public ApiResponse<ExecutionResult> execute(String code, String language,String stdin) {
         try {
             long startTime = System.currentTimeMillis();
 
@@ -45,8 +45,12 @@ public class DockerExecutorUtil {
             String fileName = getFileName(language, code);
             Files.writeString(tempDir.resolve(fileName), code);
 
+            if(stdin !=null && !stdin.isEmpty())
+            {
+                Files.writeString(tempDir.resolve("input.txt"),stdin);
+            }
             String dockerImage = getDockerImage(language);
-            String[] command = getRunCommand(language, code);
+            String[] command = getRunCommand(language, code,stdin);
 
             CreateContainerResponse container = dockerClient.createContainerCmd(dockerImage)
                     .withCmd(command)
@@ -126,16 +130,25 @@ public class DockerExecutorUtil {
         };
     }
 
-    private String[] getRunCommand(String language, String code) {
+    private String[] getRunCommand(String language, String code, String stdin) {
+
+        boolean hasInput = stdin !=null && !stdin.isEmpty();
+        String inputRedirect="";
+
+        if(hasInput)
+        {
+            inputRedirect=" < input.txt";
+        }
+
         return switch (language.toLowerCase()) {
             case "java" -> {
                 String className = extractJavaClassName(code);
-                yield new String[]{"sh", "-c", "javac " + className + ".java && java " + className};
+                yield new String[]{"sh", "-c", "javac " + className + ".java && java " + className + inputRedirect};
             }
-            case "python" -> new String[]{"sh", "-c", "python main.py"};
-            case "c"      -> new String[]{"sh", "-c", "gcc main.c -o main && ./main"};
-            case "cpp"    -> new String[]{"sh", "-c", "g++ main.cpp -o main && ./main"};
-            case "javascript"     -> new String[]{"sh", "-c", "node main.js"};
+            case "python" -> new String[]{"sh", "-c", "python main.py" + inputRedirect};
+            case "c"      -> new String[]{"sh", "-c", "gcc main.c -o main && ./main" + inputRedirect};
+            case "cpp"    -> new String[]{"sh", "-c", "g++ main.cpp -o main && ./main" + inputRedirect};
+            case "javascript"     -> new String[]{"sh", "-c", "node main.js" + inputRedirect};
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }

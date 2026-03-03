@@ -13,6 +13,6 @@ public class ExecutionService
     public ApiResponse<ExecutionResult> execute(CodeExecutionRequest request)
     {
         CodeExecutor ce = new CodeExecutor();
-        return ce.execute(request.getCode(), request.getLanguage());
+        return ce.execute(request.getCode(), request.getLanguage(),request.getStdin());
     }
 }

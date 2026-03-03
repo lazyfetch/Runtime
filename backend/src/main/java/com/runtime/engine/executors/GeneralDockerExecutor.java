@@ -14,7 +14,7 @@ public class GeneralDockerExecutor implements LanguageExecutor {
     }
 
     @Override
-    public ApiResponse<ExecutionResult> execute(String code) {
-        return dockerUtil.execute(code, language);
+    public ApiResponse<ExecutionResult> execute(String code,String stdin) {
+        return dockerUtil.execute(code,language,stdin);
     }
 }

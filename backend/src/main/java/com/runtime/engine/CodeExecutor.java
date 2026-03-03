@@ -21,7 +21,7 @@ public class CodeExecutor {
         executors.put("js",new GeneralDockerExecutor("javascript"));
     }
 
-    public ApiResponse<ExecutionResult> execute(String code, String language)
+    public ApiResponse<ExecutionResult> execute(String code, String language, String stdin)
     {
         LanguageExecutor executor = executors.get(language.toLowerCase());
 
@@ -30,6 +30,6 @@ public class CodeExecutor {
             return ApiResponse.error("Unsupported language: " + language);
         }
 
-        return executor.execute(code);
+        return executor.execute(code,stdin);
     }
 }
