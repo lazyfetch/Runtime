@@ -12,44 +12,68 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 @Service
-public class JobConsumer {
+public class JobConsumer
+{
 
     private final StringRedisTemplate redisTemplate;
     private static final String QUEUE_NAME = "Runtime";
     private final DockerExecutorUtil dockerExecutorUtil;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public JobConsumer(StringRedisTemplate redisTemplate, DockerExecutorUtil dockerExecutorUtil) {
+    public JobConsumer(StringRedisTemplate redisTemplate, DockerExecutorUtil dockerExecutorUtil)
+    {
         this.redisTemplate = redisTemplate;
         this.dockerExecutorUtil = dockerExecutorUtil;
     }
 
     @Scheduled(fixedDelay = 1000)
-    public void processQueue() {
+    public void processQueue()
+    {
         String jobData = redisTemplate.opsForList().rightPop(QUEUE_NAME, Duration.ofSeconds(1));
 
         if (jobData != null)
         {
-            System.out.println("Popped and processing job: " + jobData);
+            System.out.println("Popped job: " + jobData);
+            String jobId = null;
+
             try
             {
                 JsonNode node = objectMapper.readTree(jobData);
-                String jobId    = node.get("jobId").asText();
+                jobId    = node.get("jobId").asText();
                 String code     = node.get("code").asText();
                 String language = node.get("language").asText();
                 String stdin    = node.get("stdin").asText();
+                String cacheKey = node.has("cacheKey") ? node.get("cacheKey").asText() : null;
+
+
+                redisTemplate.opsForValue().set("status:" + jobId, "RUNNING");
 
                 ApiResponse<ExecutionResult> result = dockerExecutorUtil.execute(code, language, stdin);
 
-
                 String resultJson = objectMapper.writeValueAsString(result);
+
                 redisTemplate.opsForValue().set("result:" + jobId, resultJson);
-                System.out.println("Result saved for jobId: " + jobId);
+                redisTemplate.opsForValue().set("status:" + jobId, "COMPLETED");
+
+                redisTemplate.expire("result:" + jobId, Duration.ofHours(1));
+                redisTemplate.expire("status:" + jobId, Duration.ofHours(1));
+
+                if (cacheKey != null)
+                {
+                    redisTemplate.opsForValue().set(cacheKey, resultJson, Duration.ofHours(1));
+                    System.out.println("Result cached with key: " + cacheKey);
+                }
+
+                System.out.println("Job completed: " + jobId);
 
             }
             catch (Exception e)
             {
                 System.err.println("Failed to process job: " + e.getMessage());
+                if (jobId != null)
+                {
+                    redisTemplate.opsForValue().set("status:" + jobId, "FAILED");
+                }
             }
         }
     }

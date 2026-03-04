@@ -107,3 +107,19 @@ Content-Type: application/json
 
 
 
+###job-id polling###
+GET http://localhost:8081/api/result/6dada738-7329-493c-b83a-30714b32564f
+Content-Type: application/json
+
+
+###Security block###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "import os\nos.system('sudo rm -rf /')",
+  "language": "python"
+}
+
+
+
