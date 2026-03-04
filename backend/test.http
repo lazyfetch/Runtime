@@ -96,4 +96,14 @@ Content-Type: application/json
   "stdin": "TestinginputinJavaScript..."
 }
 
+###Java with error###
+POST http://localhost:8081/api/execute
+Content-Type: application/json
+
+{
+  "code": "public class Hello { public static void main(String[] args) { while(true){ int x = 1; } } }",
+  "language": "java"
+}
+
+
 
