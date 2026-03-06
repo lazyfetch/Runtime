@@ -122,12 +122,12 @@ Content-Type: application/json
 }
 
 ###Signup###
-POST http://localhost:8081/api/auth/signup
+POST http://localhost:8081/api/auth/register
 Content-Type: application/json
 
 {
   "email": "test@test.com",
-  "username": "testuser",
+  "name": "testuser",
   "password": "password123"
 }
 
