@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.runtime.engine.DockerExecutorUtil;
 import com.runtime.model.ApiResponse;
 import com.runtime.model.ExecutionResult;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 @Service
+@ConditionalOnProperty(name = "redis.enabled", havingValue = "true")
+
 public class JobConsumer
 {
 

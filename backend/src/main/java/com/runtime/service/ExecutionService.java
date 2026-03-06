@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.runtime.jobs.JobProducer;
 import com.runtime.model.ApiResponse;
 import com.runtime.model.CodeExecutionRequest;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,8 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@ConditionalOnProperty(name = "redis.enabled", havingValue = "true")
+
 public class ExecutionService
 {
 
