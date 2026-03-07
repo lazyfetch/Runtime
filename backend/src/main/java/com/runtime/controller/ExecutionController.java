@@ -26,6 +26,7 @@ public class ExecutionController
     @PostMapping("/execute")
     public ApiResponse<String> execute(@RequestBody CodeExecutionRequest request)
     {
+        System.out.println(">>> ExecutionController (Redis) handling request");
         return executionService.execute(request);
     }
 

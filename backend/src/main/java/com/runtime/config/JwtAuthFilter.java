@@ -16,12 +16,14 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter
+{
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserRepository userRepository) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserRepository userRepository)
+    {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
     }
@@ -30,6 +32,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException
     {
         String authHeader = request.getHeader("Authorization");
+        System.out.println(">>> URI: " + request.getRequestURI());
+        System.out.println(">>> Auth header present: " + (authHeader != null));
 
         if (authHeader == null || !authHeader.startsWith("Bearer "))
         {
@@ -38,25 +42,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+        boolean valid = jwtUtil.isTokenValid(token);
+        System.out.println(">>> Token valid: " + valid);
 
-        if (!jwtUtil.isTokenValid(token))
+        if (!valid)
         {
             filterChain.doFilter(request, response);
             return;
         }
 
         String email = jwtUtil.extractEmail(token);
+        System.out.println(">>> Email: " + email);
 
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            userRepository.findByEmail(email).ifPresent(user -> {
-                UserDetails userDetails = User.withUsername(user.getEmail()).password("").authorities(List.of()).build();
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            });
+        if (SecurityContextHolder.getContext().getAuthentication() == null)
+        {
+            UserDetails userDetails = User.withUsername(email).password("").authorities(List.of()).build();
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+            System.out.println(">>> Authentication SET");
         }
-
         filterChain.doFilter(request, response);
     }
 }
