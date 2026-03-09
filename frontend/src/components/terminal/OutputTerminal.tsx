@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ExecutionResult } from '../../types/execution.types';
+import { deriveStatus } from '../../types/execution.types';
 import TerminalHeader from './TerminalHeader';
 import Loader from '../common/Loader';
 import { formatOutput } from '../../utils/formatOutput';
@@ -13,8 +14,10 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'output' | 'problems'>('output');
 
+  const status = result ? deriveStatus(result) : undefined;
+
   const handleCopy = () => {
-    const text = result?.output ?? result?.error ?? '';
+    const text = result?.stdout ?? result?.stderr ?? '';
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -23,9 +26,8 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
   return (
     <div className="flex flex-col h-full bg-[#0e0e0e]">
       <TerminalHeader
-        status={result?.status}
-        executionTimeMs={result?.executionTimeMs}
-        cacheHit={result?.cacheHit}
+        status={status}
+        executionTime={result?.executionTime}
         onCopy={handleCopy}
         copied={copied}
         activeTab={activeTab}
@@ -61,21 +63,21 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
           {!loading && result && (
             <div>
               <div className="flex items-center gap-2 text-[11px] mb-4 pb-3 border-b border-zinc-900">
-                <span className={`font-mono ${result.status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'}`}>
-                  {result.status === 'SUCCESS' ? '❯' : '✗'}
+                <span className={`font-mono ${status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'}`}>
+                  {status === 'SUCCESS' ? '❯' : '✗'}
                 </span>
                 <span className="text-zinc-600">
                   Process exited with code{' '}
-                  <span className={result.status === 'SUCCESS' ? 'text-green-500' : 'text-red-500'}>
-                    {result.status === 'SUCCESS' ? '0' : '1'}
+                  <span className={status === 'SUCCESS' ? 'text-green-500' : 'text-red-500'}>
+                    {result.exitCode}
                   </span>
                 </span>
               </div>
-              {result.output && (
-                <pre className="text-[#9cdcfe] whitespace-pre-wrap break-words">{formatOutput(result.output)}</pre>
+              {result.stdout && (
+                <pre className="text-[#9cdcfe] whitespace-pre-wrap break-words">{formatOutput(result.stdout)}</pre>
               )}
-              {result.error && (
-                <pre className="text-red-400 whitespace-pre-wrap break-words mt-2">{result.error}</pre>
+              {result.stderr && (
+                <pre className="text-red-400 whitespace-pre-wrap break-words mt-2">{result.stderr}</pre>
               )}
             </div>
           )}

@@ -2,8 +2,7 @@ import { formatExecutionTime } from '../../utils/formatOutput';
 
 interface TerminalHeaderProps {
   status?: 'SUCCESS' | 'ERROR' | 'TIMEOUT' | null;
-  executionTimeMs?: number;
-  cacheHit?: boolean;
+  executionTime?: number;
   onCopy: () => void;
   copied?: boolean;
   activeTab: 'output' | 'problems';
@@ -11,7 +10,7 @@ interface TerminalHeaderProps {
 }
 
 const TerminalHeader: React.FC<TerminalHeaderProps> = ({
-  status, executionTimeMs, cacheHit, onCopy, copied, activeTab, onTabChange,
+  status, executionTime, onCopy, copied, activeTab, onTabChange,
 }) => (
   <div className="shrink-0 flex items-center h-10 bg-[#252526] border-b border-[#1a1a1a] text-sm select-none">
 
@@ -48,11 +47,8 @@ const TerminalHeader: React.FC<TerminalHeaderProps> = ({
             {status === 'SUCCESS' ? 'Passed' : status === 'TIMEOUT' ? 'Timed out' : 'Error'}
           </span>
         )}
-        {cacheHit && (
-          <span className="px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-400 font-semibold text-xs uppercase tracking-wide">⚡ Cached</span>
-        )}
-        {executionTimeMs != null && (
-          <span className="text-zinc-500 font-mono text-sm">{formatExecutionTime(executionTimeMs)}</span>
+        {executionTime != null && (
+          <span className="text-zinc-500 font-mono text-sm">{formatExecutionTime(executionTime)}</span>
         )}
         <button
           onClick={onCopy}

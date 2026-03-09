@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
-import { login, register, guest, logoutApi } from '../api/auth.api';
+import { login, register, guest } from '../api/auth.api';
 import type { LoginRequest, RegisterRequest } from '../types/auth.types';
 
 export const useAuth = () => {
@@ -14,8 +14,7 @@ export const useAuth = () => {
     setLoading(true); setError(null);
     try {
       const res = await login(data);
-      // Backend sets HttpOnly cookie. Use name/email from response body for display.
-      setAuth({ email: res.data.email, name: res.data.name });
+      setAuth({ email: res.data.email, name: res.data.name }, res.data.token);
       navigate('/dashboard');
     } catch {
       setError('Invalid email or password');
@@ -26,7 +25,7 @@ export const useAuth = () => {
     setLoading(true); setError(null);
     try {
       const res = await register(data);
-      setAuth({ email: res.data.email, name: res.data.name });
+      setAuth({ email: res.data.email, name: res.data.name }, res.data.token);
       navigate('/dashboard');
     } catch {
       setError('Email already in use or registration failed.');
@@ -36,16 +35,15 @@ export const useAuth = () => {
   const handleGuest = async () => {
     setLoading(true); setError(null);
     try {
-      await guest();
-      setAuth({ email: 'guest', name: 'Guest' });
+      const res = await guest();
+      setAuth({ email: 'guest', name: 'Guest' }, res.data.token);
       navigate('/editor/new');
     } catch {
       setError('Could not continue as guest. Try again.');
     } finally { setLoading(false); }
   };
 
-  const handleLogout = async () => {
-    try { await logoutApi(); } catch { /* ignore — clear client state regardless */ }
+  const handleLogout = () => {
     clearAuth();
     navigate('/login');
   };

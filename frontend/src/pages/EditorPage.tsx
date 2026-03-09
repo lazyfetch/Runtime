@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CodeEditor from '../components/editor/CodeEditor';
 import OutputTerminal from '../components/terminal/OutputTerminal';
+import InteractiveTerminal from '../components/terminal/InteractiveTerminal';
 import LanguageSelector from '../components/editor/LanguageSelector';
 import Loader from '../components/common/Loader';
 import { useCodeExecution } from '../hooks/useCodeExecution';
@@ -38,6 +39,10 @@ const EditorPage: React.FC = () => {
   const [zoomIndex, setZoomIndex] = useState(2);
   const [editorWidthPct, setEditorWidthPct] = useState(62);
   const [showOutput, setShowOutput] = useState(true);
+  // interactiveKey === 0 means REST output panel; >0 means xterm.js session (incremented each run)
+  const [interactiveKey, setInteractiveKey] = useState(0);
+  // Snapshot of code+lang at the moment Run was clicked, used for the WS session
+  const [interactiveSnapshot, setInteractiveSnapshot] = useState<{ code: string; language: string } | null>(null);
 
   useEffect(() => { codeRef.current = code; }, [code]);
   useEffect(() => { langRef.current = language; }, [language]);
@@ -61,12 +66,13 @@ const EditorPage: React.FC = () => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !executing) {
         e.preventDefault();
-        run({ code: codeRef.current, language: langRef.current, projectId });
+        handleRun();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [run, projectId, executing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [executing]);
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
@@ -74,7 +80,43 @@ const EditorPage: React.FC = () => {
     clearResult();
   };
 
-  const handleRun = () => run({ code, language, projectId });
+  const handleRun = () => {
+    const c = codeRef.current;
+    const lang = langRef.current;
+
+    // C/C++ stdin reads silently succeed with garbage when stdin is EOF —
+    // no error is emitted, so REST-then-detect doesn't work. Pre-scan and
+    // go directly to WebSocket if any stdin pattern is found in the code.
+    const CPP_STDIN = /\bcin\s*>>|\bscanf\s*\(|\bscanf_s\s*\(|\bgets\s*\(|\bfgets\s*\(|\bgetchar\s*\(|\bgetline\s*\(\s*cin|\bcin\.get\s*\(|\bcin\.ignore\s*\(/;
+    if ((lang === 'c' || lang === 'cpp') && CPP_STDIN.test(c)) {
+      setInteractiveSnapshot({ code: c, language: lang });
+      setInteractiveKey((k) => k + 1);
+      setShowOutput(true);
+      return;
+    }
+
+    // All other languages: run via REST first; if backend signals stdin is
+    // required the useEffect below will silently swap to the interactive terminal.
+    setInteractiveKey(0);
+    setShowOutput(true);
+    run({ code: c, language: lang });
+  };
+
+  // Auto-switch to interactive terminal when backend signals stdin is required.
+  // Also match on stderr content directly as a fallback in case errorType ordering
+  // in the backend lets a RUNTIME_ERROR slip through before STDIN_REQUIRED.
+  useEffect(() => {
+    if (!result) return;
+    const stdinRequired =
+      result.errorType === 'STDIN_REQUIRED' ||
+      result.stderr?.includes('EOFError') ||
+      result.stderr?.includes('NoSuchElementException') ||
+      result.stderr?.includes('end of file');
+    if (stdinRequired) {
+      setInteractiveSnapshot({ code: codeRef.current, language: langRef.current });
+      setInteractiveKey((k) => k + 1);
+    }
+  }, [result]);
 
   const handleClear = () => {
     setCode(defaultSnippets[language]);
@@ -188,6 +230,10 @@ const EditorPage: React.FC = () => {
 
           <div className="w-px h-5 bg-zinc-800 mx-1" />
 
+          {/* Mode toggle removed — auto-detected from backend response */}
+
+          <div className="w-px h-5 bg-zinc-800 mx-1" />
+
           <button
             onClick={handleClear}
             className="h-8 px-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
@@ -247,7 +293,15 @@ const EditorPage: React.FC = () => {
               className="w-[3px] shrink-0 bg-[#1a1a1a] hover:bg-blue-500/60 active:bg-blue-500 cursor-col-resize transition-colors"
             />
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-              <OutputTerminal result={result} loading={executing} />
+              {interactiveKey > 0 && interactiveSnapshot ? (
+                <InteractiveTerminal
+                  key={interactiveKey}
+                  language={interactiveSnapshot.language}
+                  code={interactiveSnapshot.code}
+                />
+              ) : (
+                <OutputTerminal result={result} loading={executing} />
+              )}
             </div>
           </>
         )}

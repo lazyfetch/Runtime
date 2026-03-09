@@ -12,6 +12,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -33,10 +34,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         System.out.println(">>> URI: " + session.getUri().getPath());
-        System.out.println(">>> Auth header present: " +
-                (session.getHandshakeHeaders().getFirst("Authorization") != null));
         System.out.println("Connected: " + session.getId());
-        // wait for first message with code + language
     }
 
     @Override
@@ -44,9 +42,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String sessionId = session.getId();
         InteractiveSession interactiveSession = sessions.get(sessionId);
 
-        //initialize container
-        if (interactiveSession == null)
-        {
+        if (interactiveSession == null) {
             try {
                 Map<?, ?> payload = objectMapper.readValue(message.getPayload(), Map.class);
                 String code = (String) payload.get("code");
@@ -58,18 +54,25 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     return;
                 }
 
-                // bytesReceived tracker per session
                 long[] bytesReceived = {0};
+                // Flag to stop callback after session is dead
+                AtomicBoolean killed = new AtomicBoolean(false);
 
                 InteractiveSession newSession = dockerExecutorUtil.executeInteractive(
                         code, language,
                         outputBytes -> {
+                            // Stop immediately if killed
+                            if (killed.get()) return;
+
                             bytesReceived[0] += outputBytes.length;
                             if (bytesReceived[0] > MAX_OUTPUT_BYTES) {
+                                killed.set(true);
                                 try {
-                                    session.sendMessage(new TextMessage("\r\nError: Maximum output limit exceeded.\r\n"));
+                                    if (session.isOpen()) {
+                                        session.sendMessage(new TextMessage("\r\nError: Maximum output limit exceeded.\r\n"));
+                                    }
                                     cleanupSession(session);
-                                    session.close(CloseStatus.POLICY_VIOLATION);
+                                    if (session.isOpen()) session.close(CloseStatus.POLICY_VIOLATION);
                                 } catch (Exception e) {
                                     System.err.println("Output limit kill error: " + e.getMessage());
                                 }
@@ -80,20 +83,25 @@ public class WebSocketHandler extends TextWebSocketHandler {
                                     session.sendMessage(new TextMessage(outputBytes));
                                 }
                             } catch (IOException e) {
-                                System.err.println("Send failed: " + e.getMessage());
-                                cleanupSession(session);
+                                if (!killed.get()) {
+                                    System.err.println("Send failed: " + e.getMessage());
+                                    cleanupSession(session);
+                                }
                             }
                         }
                 );
 
+                // Store killed flag in session so cleanupSession can set it
+                newSession.setKilledFlag(killed);
                 sessions.put(sessionId, newSession);
-
 
                 ScheduledFuture<?> ttl = scheduler.schedule(() -> {
                     try {
-                        session.sendMessage(new TextMessage("\r\nError: Session timed out after " + TTL_SECONDS + " seconds.\r\n"));
+                        if (session.isOpen()) {
+                            session.sendMessage(new TextMessage("\r\nSession timed out after " + TTL_SECONDS + " seconds.\r\n"));
+                        }
                         cleanupSession(session);
-                        session.close(CloseStatus.POLICY_VIOLATION);
+                        if (session.isOpen()) session.close(CloseStatus.POLICY_VIOLATION);
                     } catch (Exception e) {
                         System.err.println("TTL error: " + e.getMessage());
                     }
@@ -101,23 +109,17 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
                 ttlFutures.put(sessionId, ttl);
 
-            }
-            catch (Exception e)
-            {
-                try
-                {
+            } catch (Exception e) {
+                try {
                     session.sendMessage(new TextMessage("Error: Failed to start session: " + e.getMessage() + "\r\n"));
                     session.close(CloseStatus.SERVER_ERROR);
-                }
-                catch (IOException ex)
-                {
+                } catch (IOException ex) {
                     System.err.println("Failed to send error message: " + ex.getMessage());
                 }
-            }
-            return;
+            }return;
         }
 
-        //subsequent messages: forward to container stdin
+        // Subsequent messages: forward to container stdin as full line
         try {
             String input = message.getPayload();
             byte[] rawBytes = (input + "\n").getBytes();
@@ -144,20 +146,20 @@ public class WebSocketHandler extends TextWebSocketHandler {
         InteractiveSession s = sessions.remove(sessionId);
         if (s == null) return;
 
+        // Set killed flag to stop output callback
+        if (s.getKilledFlag() != null) s.getKilledFlag().set(true);
+
         try { s.getDockerInput().close(); } catch (IOException ignored) {}
 
         try {
-            dockerExecutorUtil.getDockerClient()
-                    .killContainerCmd(s.getContainerId()).exec();
+            dockerExecutorUtil.getDockerClient().killContainerCmd(s.getContainerId()).exec();
         } catch (Exception ignored) {}
 
         try {
-            dockerExecutorUtil.getDockerClient()
-                    .removeContainerCmd(s.getContainerId()).withForce(true).exec();
+            dockerExecutorUtil.getDockerClient().removeContainerCmd(s.getContainerId()).withForce(true).exec();
             System.out.println("Removed container: " + s.getContainerId());
         } catch (Exception ignored) {}
 
-        // delete temp dir
         java.io.File tempDir = new java.io.File(s.getTempDirPath());
         deleteDirectory(tempDir);
     }

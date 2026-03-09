@@ -10,8 +10,7 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  // token is intentionally ignored on the frontend.
-  // Auth is handled exclusively via HttpOnly cookies set by the server.
+  token: string;
   email: string;
   name: string;
 }

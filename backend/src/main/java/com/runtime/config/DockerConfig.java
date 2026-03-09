@@ -12,6 +12,14 @@ public class DockerConfig {
 
     @Bean
     public DockerClient dockerClient() {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            if (thread.getName().contains("docker-java-httpclient5-hijacking-stream"))
+            {
+                return;
+            }
+            System.err.println("Uncaught exception in thread " + thread.getName() + ": " + throwable.getMessage());
+        });
+
         DefaultDockerClientConfig config = DefaultDockerClientConfig
                 .createDefaultConfigBuilder()
                 .withDockerHost("tcp://localhost:2375")

@@ -148,6 +148,10 @@ public class DockerExecutorUtil {
                 {
                     errorType = "COMPILE_ERROR";
                 }
+                else if (stderrStr.contains("EOFError") || stderrStr.contains("NoSuchElementException") || stderrStr.contains("end of file") || (stderrStr.isEmpty() && stdoutStr.isEmpty() && exitCode != 0))
+                {
+                    errorType = "STDIN_REQUIRED";
+                }
                 else if (stderrStr.contains("Exception") || stderrStr.contains("Traceback") || stderrStr.contains("Error:"))
                 {
                     errorType = "RUNTIME_ERROR";
@@ -251,13 +255,14 @@ public class DockerExecutorUtil {
                 String className = extractJavaClassName(code);
                 yield new String[]{"sh", "-c", "javac " + className + ".java && java " + className};
             }
-            case "python"           -> new String[]{"sh", "-c", "python -u main.py"};  // -u = unbuffered
-            case "c"                -> new String[]{"sh", "-c", "gcc main.c -o main && ./main"};
-            case "cpp"              -> new String[]{"sh", "-c", "g++ main.cpp -o main && ./main"};
+            case "python" -> new String[]{"sh", "-c", "python -u main.py"};
+            case "c"      -> new String[]{"sh", "-c", "gcc main.c -o main && stdbuf -o0 -e0 ./main"};
+            case "cpp"    -> new String[]{"sh", "-c", "g++ main.cpp -o main && stdbuf -o0 -e0 ./main"};
             case "js", "javascript" -> new String[]{"sh", "-c", "node main.js"};
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
+
 
 
     public InteractiveSession executeInteractive(String code, String language, java.util.function.Consumer<byte[]> onOutput) throws IOException
@@ -280,7 +285,7 @@ public class DockerExecutorUtil {
 
         CreateContainerResponse container = dockerClient.createContainerCmd(dockerImage)
                 .withCmd(command)
-                .withTty(true)
+                .withTty(false)
                 .withStdinOpen(true)
                 .withAttachStdin(true)
                 .withAttachStdout(true)

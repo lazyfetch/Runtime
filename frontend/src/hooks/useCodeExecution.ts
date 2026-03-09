@@ -12,7 +12,7 @@ export const useCodeExecution = () => {
     setError(null);
     try {
       const res = await executeCode(request);
-      setResult(res.data);
+      setResult(res.data.data); // unwrap ApiResponse wrapper
     } catch {
       setError('Execution failed. Please try again.');
     } finally {
