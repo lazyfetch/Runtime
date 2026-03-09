@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 
@@ -18,6 +19,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler
 {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository)
     {
@@ -44,6 +47,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler
 
         String token = jwtUtil.generateToken(user.getEmail());
 
-        response.sendRedirect("http://localhost:3000/oauth2/callback?token=" + token);
+        response.sendRedirect(frontendUrl + "/oauth2/callback?token=" + token);
     }
 }

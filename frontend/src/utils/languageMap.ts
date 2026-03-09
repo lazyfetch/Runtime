@@ -25,6 +25,14 @@ export const languageIcons: Record<Language, string> = {
   javascript: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
 };
 
+export const languageColors: Record<Language, { border: string; bg: string; text: string }> = {
+  java:       { border: 'border-orange-500', bg: 'bg-orange-500/10', text: 'text-orange-400' },
+  python:     { border: 'border-blue-400',   bg: 'bg-blue-400/10',   text: 'text-blue-400'   },
+  c:          { border: 'border-sky-400',    bg: 'bg-sky-400/10',    text: 'text-sky-400'    },
+  cpp:        { border: 'border-pink-500',   bg: 'bg-pink-500/10',   text: 'text-pink-400'   },
+  javascript: { border: 'border-yellow-400', bg: 'bg-yellow-400/10', text: 'text-yellow-400' },
+};
+
 export const defaultSnippets: Record<Language, string> = {
   java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`,
   python: `print("Hello, World!")`,

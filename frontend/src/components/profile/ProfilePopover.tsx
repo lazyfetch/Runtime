@@ -23,20 +23,22 @@ const ProfilePopover: React.FC = () => {
           onClick={() => setOpen((o) => !o)}
           className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center hover:bg-blue-700"
         >
-          {user?.username?.[0]?.toUpperCase() ?? 'U'}
+          {user?.name?.[0]?.toUpperCase() ?? 'U'}
         </button>
         {open && (
-          <div className="absolute right-0 mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
-            <div className="px-4 py-3 border-b border-zinc-700">
-              <p className="text-white text-sm font-medium">{user?.username}</p>
-              <p className="text-zinc-400 text-xs truncate">{user?.email}</p>
+          <div className="absolute right-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl z-50">
+            <div className="px-4 py-3 border-b border-zinc-800">
+              <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
+              <p className="text-zinc-500 text-xs truncate mt-0.5">{user?.email}</p>
             </div>
-            <button onClick={() => { setShowHistory(true); setOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700">
-              Submission History
-            </button>
-            <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-700 rounded-b-lg">
-              Logout
-            </button>
+            <div className="py-1">
+              <button onClick={() => { setShowHistory(true); setOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors">
+                Submission History
+              </button>
+              <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800 transition-colors rounded-b-xl">
+                Logout
+              </button>
+            </div>
           </div>
         )}
       </div>

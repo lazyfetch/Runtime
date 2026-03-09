@@ -3,19 +3,20 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface SignupRequest {
-  username: string;
+export interface RegisterRequest {
+  name: string;
   email: string;
   password: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  user: User;
+  // token is intentionally ignored on the frontend.
+  // Auth is handled exclusively via HttpOnly cookies set by the server.
+  email: string;
+  name: string;
 }
 
 export interface User {
-  id: string;
-  username: string;
   email: string;
+  name: string;
 }

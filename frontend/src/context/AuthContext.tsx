@@ -1,39 +1,36 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '../types/auth.types';
+import { getMe } from '../api/auth.api';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User) => void;
   clearAuth: () => void;
   isAuthenticated: boolean;
+  authLoading: boolean; // true while the initial /api/auth/me check is in flight
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(null);
+  // Start as loading — we must check the cookie before rendering protected routes
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const setAuth = (user: User, token: string) => {
-    setUser(user);
-    setToken(token);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
-  };
+  useEffect(() => {
+    // On every app load, ask the backend to validate the HttpOnly cookie and return user info.
+    // This is the ONLY way auth state is restored — no localStorage, no parsing tokens in JS.
+    getMe()
+      .then((res) => setUser({ email: res.data.email, name: res.data.name }))
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
 
-  const clearAuth = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-  };
+  const setAuth = (u: User) => setUser(u);
+  const clearAuth = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ user, token, setAuth, clearAuth, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, setAuth, clearAuth, isAuthenticated: !!user, authLoading }}>
       {children}
     </AuthContext.Provider>
   );

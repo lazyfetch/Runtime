@@ -8,6 +8,7 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.runtime.model.ExecutionResult;
 import com.runtime.model.ApiResponse;
+import com.runtime.model.InteractiveSession;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -249,4 +250,85 @@ public class DockerExecutorUtil {
         }
         dir.delete();
     }
+
+    private String[] getRunCommandInteractive(String language, String code) {
+        return switch (language.toLowerCase()) {
+            case "java" -> {
+                String className = extractJavaClassName(code);
+                yield new String[]{"sh", "-c", "javac " + className + ".java && java " + className};
+            }
+            case "python"           -> new String[]{"sh", "-c", "python -u main.py"};  // -u = unbuffered
+            case "c"                -> new String[]{"sh", "-c", "gcc main.c -o main && ./main"};
+            case "cpp"              -> new String[]{"sh", "-c", "g++ main.cpp -o main && ./main"};
+            case "js", "javascript" -> new String[]{"sh", "-c", "node main.js"};
+            default -> throw new IllegalArgumentException("Unsupported language: " + language);
+        };
+    }
+
+
+    public InteractiveSession executeInteractive(String code, String language, java.util.function.Consumer<byte[]> onOutput ) throws IOException
+    {
+        // security check
+        ApiResponse<ExecutionResult> securityError = checkSecurity(code);
+        if (securityError != null)
+        {
+            throw new SecurityException("Blocked: " + securityError.getMessage());
+        }
+
+        // tempdir creation
+        String tempDirPath = System.getProperty("java.io.tmpdir") + "/interactive_" + UUID.randomUUID();
+        Path tempDir = Paths.get(tempDirPath);
+        Files.createDirectories(tempDir);
+
+        String fileName = getFileName(language, code);
+        Files.writeString(tempDir.resolve(fileName), code);
+
+        String[] command = getRunCommandInteractive(language, code);
+
+        String dockerImage = getDockerImage(language);
+
+
+        CreateContainerResponse container = dockerClient.createContainerCmd(dockerImage)
+                .withCmd(command)
+                .withTty(true)
+                .withStdinOpen(true)
+                .withAttachStdin(true)
+                .withAttachStdout(true)
+                .withAttachStderr(true)
+                .withHostConfig(HostConfig.newHostConfig()
+                        .withBinds(new Bind(tempDirPath, new Volume("/code")))
+                        .withMemory(128 * 1024 * 1024L)
+                        .withNanoCPUs(500_000_000L)
+                        .withNetworkMode("none")
+                        .withReadonlyRootfs(false)
+                        .withPidsLimit(50L))
+                .withWorkingDir("/code")
+                .exec();
+
+        String containerId = container.getId();
+
+        PipedOutputStream pipedOut = new PipedOutputStream();
+        PipedInputStream  pipedIn  = new PipedInputStream(pipedOut);
+
+        dockerClient.attachContainerCmd(containerId)
+                .withStdIn(pipedIn)
+                .withStdOut(true)
+                .withStdErr(true)
+                .exec(new com.github.dockerjava.api.async.ResultCallback.Adapter<Frame>()
+                {
+                    @Override
+                    public void onNext(Frame frame)
+                    {
+                        if (frame != null && frame.getPayload() != null)
+                        {
+                            onOutput.accept(frame.getPayload());
+                        }
+                    }
+                });
+
+
+        dockerClient.startContainerCmd(containerId).exec();
+        return new InteractiveSession(containerId, pipedOut, tempDirPath);
+    }
+
 }
