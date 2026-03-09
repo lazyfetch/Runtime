@@ -5,7 +5,7 @@ import { formatDate } from '../../utils/formatOutput';
 
 interface ProjectCardProps {
   project: Project;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {

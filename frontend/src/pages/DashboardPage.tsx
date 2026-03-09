@@ -25,7 +25,7 @@ const DashboardPage: React.FC = () => {
     e.preventDefault();
     setCreating(true);
     try {
-      const project = await addProject(newProject);
+      const project = await addProject({ ...newProject, code: '' });
       setShowModal(false);
       navigate(`/editor/${project.id}`);
     } finally {

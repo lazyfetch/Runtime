@@ -4,6 +4,7 @@ export interface CodeExecutionRequest {
   code: string;
   language: Language;
   stdin?: string;
+  projectId?: number;
 }
 
 /** Matches backend ExecutionResult */

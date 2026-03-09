@@ -11,7 +11,7 @@ export const useProjects = () => {
     setLoading(true);
     try {
       const res = await getProjects();
-      setProjects(res.data);
+      setProjects(res.data.data);
     } catch {
       setError('Failed to load projects');
     } finally {
@@ -23,18 +23,20 @@ export const useProjects = () => {
 
   const addProject = async (data: CreateProjectRequest) => {
     const res = await createProject(data);
-    setProjects((prev) => [res.data, ...prev]);
-    return res.data;
+    const project = res.data.data;
+    setProjects((prev) => [project, ...prev]);
+    return project;
   };
 
-  const editProject = async (id: string, data: UpdateProjectRequest) => {
+  const editProject = async (id: string | number, data: UpdateProjectRequest) => {
     const res = await updateProject(id, data);
-    setProjects((prev) => prev.map((p) => (p.id === id ? res.data : p)));
+    const updated = res.data.data;
+    setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
 
-  const removeProject = async (id: string) => {
+  const removeProject = async (id: string | number) => {
     await deleteProject(id);
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setProjects((prev) => prev.filter((p) => p.id !== Number(id)));
   };
 
   return { projects, loading, error, addProject, editProject, removeProject, refetch: fetchProjects };

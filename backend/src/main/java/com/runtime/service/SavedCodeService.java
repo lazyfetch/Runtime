@@ -1,12 +1,16 @@
 package com.runtime.service;
 
-import com.runtime.model.*;
-import com.runtime.repository.SavedCodeRepository;
-import com.runtime.repository.UserRepository;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.runtime.model.SavedCode;
+import com.runtime.model.SavedCodeRequest;
+import com.runtime.model.SavedCodeResponse;
+import com.runtime.model.User;
+import com.runtime.repository.SavedCodeRepository;
+import com.runtime.repository.UserRepository;
 
 @Service
 public class SavedCodeService {
@@ -38,7 +42,7 @@ public class SavedCodeService {
         s.setUser(user);
         s.setTitle(request.getTitle());
         s.setLanguage(request.getLanguage());
-        s.setCode(request.getCode());
+        s.setCode(request.getCode() != null ? request.getCode() : "");
 
         return SavedCodeResponse.from(savedCodeRepository.save(s));
     }

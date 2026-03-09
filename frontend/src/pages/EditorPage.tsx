@@ -53,9 +53,10 @@ const EditorPage: React.FC = () => {
     if (!projectId) return;
     getProjectById(projectId)
       .then((res) => {
-        setLanguage(res.data.language);
-        setCode(res.data.code || defaultSnippets[res.data.language]);
-        setProjectTitle(res.data.title || '');
+        const project = res.data.data;
+        setLanguage(project.language);
+        setCode(project.code || defaultSnippets[project.language]);
+        setProjectTitle(project.title || '');
       })
       .catch(() => navigate('/dashboard'))
       .finally(() => setPageLoading(false));
@@ -99,7 +100,7 @@ const EditorPage: React.FC = () => {
     // required the useEffect below will silently swap to the interactive terminal.
     setInteractiveKey(0);
     setShowOutput(true);
-    run({ code: c, language: lang });
+    run({ code: c, language: lang, projectId: projectId ? Number(projectId) : undefined });
   };
 
   // Auto-switch to interactive terminal when backend signals stdin is required.

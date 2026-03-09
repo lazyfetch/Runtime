@@ -24,16 +24,15 @@ const RecentExecutions: React.FC<RecentExecutionsProps> = ({ submissions, loadin
     {!loading && submissions.length > 0 && (
       <>
         {/* Table header */}
-        <div className="grid grid-cols-[1fr_140px_100px_90px_100px] gap-4 px-6 py-3 text-xs text-zinc-500 font-semibold uppercase tracking-widest border-b border-zinc-800">
+        <div className="grid grid-cols-[1fr_140px_100px_100px] gap-4 px-6 py-3 text-xs text-zinc-500 font-semibold uppercase tracking-widest border-b border-zinc-800">
           <span>Language</span>
           <span>Status</span>
           <span>Duration</span>
-          <span>Cache</span>
           <span>When</span>
         </div>
         <div className="divide-y divide-zinc-800/80">
           {submissions.slice(0, 8).map((s) => (
-            <div key={s.id} className="grid grid-cols-[1fr_140px_100px_90px_100px] gap-4 px-6 py-4 items-center hover:bg-zinc-800/40 transition-colors">
+            <div key={s.id} className="grid grid-cols-[1fr_140px_100px_100px] gap-4 px-6 py-4 items-center hover:bg-zinc-800/40 transition-colors">
               <span className="text-zinc-200 text-sm inline-flex items-center gap-2.5 font-medium">
                 <img src={languageIcons[s.language]} alt="" className="w-5 h-5" />
                 {languageLabels[s.language]}
@@ -48,13 +47,7 @@ const RecentExecutions: React.FC<RecentExecutionsProps> = ({ submissions, loadin
                 }`} />
                 {s.status === 'SUCCESS' ? 'Passed' : s.status === 'TIMEOUT' ? 'Timed out' : 'Failed'}
               </span>
-              <span className="text-zinc-400 font-mono text-sm">{formatExecutionTime(s.executionTimeMs)}</span>
-              <span className="text-sm">
-                {s.cacheHit
-                  ? <span className="text-violet-400 bg-violet-400/10 px-2 py-0.5 rounded-md text-xs font-semibold">CACHED</span>
-                  : <span className="text-zinc-600 text-xs">—</span>
-                }
-              </span>
+              <span className="text-zinc-400 font-mono text-sm">{formatExecutionTime(s.executionTime)}</span>
               <span className="text-zinc-500 text-sm">{formatDate(s.createdAt)}</span>
             </div>
           ))}

@@ -35,8 +35,7 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ open, onClose }) 
               </div>
               <div className="flex gap-3 mt-1 text-xs text-zinc-500">
                 <span>{formatDate(s.createdAt)}</span>
-                <span>{formatExecutionTime(s.executionTimeMs)}</span>
-                {s.cacheHit && <span className="text-purple-400">⚡ Cache Hit</span>}
+                <span>{formatExecutionTime(s.executionTime)}</span>
               </div>
             </div>
           ))}

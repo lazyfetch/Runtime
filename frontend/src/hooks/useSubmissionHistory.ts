@@ -9,7 +9,7 @@ export const useSubmissionHistory = () => {
 
   useEffect(() => {
     getSubmissions()
-      .then((res) => setSubmissions(res.data))
+      .then((res) => setSubmissions(res.data.data))
       .catch(() => setError('Failed to load history'))
       .finally(() => setLoading(false));
   }, []);

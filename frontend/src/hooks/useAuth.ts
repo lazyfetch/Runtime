@@ -37,7 +37,7 @@ export const useAuth = () => {
     try {
       const res = await guest();
       setAuth({ email: 'guest', name: 'Guest' }, res.data.token);
-      navigate('/editor/new');
+      navigate('/dashboard');
     } catch {
       setError('Could not continue as guest. Try again.');
     } finally { setLoading(false); }

@@ -1,12 +1,10 @@
 import type { Language } from './execution.types';
 
 export interface Project {
-  id: string;
-  userId: string;
+  id: number;
   title: string;
   language: Language;
   code: string;
-  lastOutput: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,5 +19,4 @@ export interface UpdateProjectRequest {
   title?: string;
   language?: Language;
   code?: string;
-  lastOutput?: string;
 }

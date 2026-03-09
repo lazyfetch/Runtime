@@ -1,14 +1,13 @@
 import type { Language } from './execution.types';
 
 export interface Submission {
-  id: string;
-  userId: string;
-  projectId: string | null;
+  id: number;
+  projectId: number | null;
   language: Language;
   code: string;
-  output: string;
+  stdout: string;
+  stderr: string;
   status: 'SUCCESS' | 'ERROR' | 'TIMEOUT';
-  cacheHit: boolean;
-  executionTimeMs: number;
+  executionTime: number;
   createdAt: string;
 }

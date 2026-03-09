@@ -27,6 +27,8 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       const publicPaths = ['/login', '/signup', '/oauth2/callback'];
       if (!publicPaths.includes(window.location.pathname)) {
+        localStorage.removeItem('runtime_token');
+        localStorage.removeItem('runtime_user');
         window.location.href = '/login';
       }
     }

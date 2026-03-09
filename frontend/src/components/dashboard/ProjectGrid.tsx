@@ -5,7 +5,7 @@ import Loader from '../common/Loader';
 interface ProjectGridProps {
   projects: Project[];
   loading: boolean;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onNew: () => void;
 }
 
