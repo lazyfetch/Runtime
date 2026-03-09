@@ -3,9 +3,6 @@ package com.runtime.engine;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.runtime.model.ExecutionResult;
 import com.runtime.model.ApiResponse;
 import com.runtime.model.InteractiveSession;
@@ -24,6 +21,10 @@ public class DockerExecutorUtil {
 
     private final DockerClient dockerClient;
 
+    public DockerClient getDockerClient()
+    {
+        return dockerClient;
+    }
     private static final int EXECUTION_TIMEOUT_SECONDS = 10;
 
     private static final List<Pattern> BLOCKED_PATTERNS = List.of(
@@ -38,18 +39,11 @@ public class DockerExecutorUtil {
             Pattern.compile("sudo", Pattern.CASE_INSENSITIVE)
     );
 
-    public DockerExecutorUtil() {
-        DefaultDockerClientConfig config = DefaultDockerClientConfig
-                .createDefaultConfigBuilder()
-                .withDockerHost("tcp://localhost:2375")
-                .build();
 
-        ApacheDockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
-                .dockerHost(config.getDockerHost())
-                .build();
-
-        this.dockerClient = DockerClientImpl.getInstance(config, httpClient);
+    public DockerExecutorUtil(DockerClient dockerClient) {
+        this.dockerClient = dockerClient;
     }
+
 
     public ApiResponse<ExecutionResult> execute(String code, String language, String stdin) {
 
@@ -266,16 +260,14 @@ public class DockerExecutorUtil {
     }
 
 
-    public InteractiveSession executeInteractive(String code, String language, java.util.function.Consumer<byte[]> onOutput ) throws IOException
+    public InteractiveSession executeInteractive(String code, String language, java.util.function.Consumer<byte[]> onOutput) throws IOException
     {
-        // security check
         ApiResponse<ExecutionResult> securityError = checkSecurity(code);
         if (securityError != null)
         {
             throw new SecurityException("Blocked: " + securityError.getMessage());
         }
 
-        // tempdir creation
         String tempDirPath = System.getProperty("java.io.tmpdir") + "/interactive_" + UUID.randomUUID();
         Path tempDir = Paths.get(tempDirPath);
         Files.createDirectories(tempDir);
@@ -284,9 +276,7 @@ public class DockerExecutorUtil {
         Files.writeString(tempDir.resolve(fileName), code);
 
         String[] command = getRunCommandInteractive(language, code);
-
         String dockerImage = getDockerImage(language);
-
 
         CreateContainerResponse container = dockerClient.createContainerCmd(dockerImage)
                 .withCmd(command)
@@ -307,28 +297,27 @@ public class DockerExecutorUtil {
 
         String containerId = container.getId();
 
+        dockerClient.startContainerCmd(containerId).exec();
+
         PipedOutputStream pipedOut = new PipedOutputStream();
-        PipedInputStream  pipedIn  = new PipedInputStream(pipedOut);
+        PipedInputStream pipedIn = new PipedInputStream(pipedOut);
 
         dockerClient.attachContainerCmd(containerId)
                 .withStdIn(pipedIn)
                 .withStdOut(true)
                 .withStdErr(true)
+                .withFollowStream(true)
                 .exec(new com.github.dockerjava.api.async.ResultCallback.Adapter<Frame>()
                 {
                     @Override
-                    public void onNext(Frame frame)
-                    {
-                        if (frame != null && frame.getPayload() != null)
-                        {
+                    public void onNext(Frame frame) {
+                        if (frame != null && frame.getPayload() != null) {
                             onOutput.accept(frame.getPayload());
                         }
                     }
                 });
-
-
-        dockerClient.startContainerCmd(containerId).exec();
         return new InteractiveSession(containerId, pipedOut, tempDirPath);
     }
+
 
 }

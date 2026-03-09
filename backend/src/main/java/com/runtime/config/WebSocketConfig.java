@@ -1,4 +1,3 @@
-// Replace WebSocketConfig.java with this
 package com.runtime.config;
 
 import com.runtime.websocket.WebSocketHandler;
@@ -9,17 +8,19 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 @Configuration
 @EnableWebSocket
-public class WebSocketConfig implements WebSocketConfigurer {
+public class WebSocketConfig implements WebSocketConfigurer
+{
 
     private final WebSocketHandler webSocketHandler;
 
-    public WebSocketConfig(WebSocketHandler webSocketHandler) {
+    public WebSocketConfig(WebSocketHandler webSocketHandler)
+    {
         this.webSocketHandler = webSocketHandler;
     }
 
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler, "/ws/execute")
-                .setAllowedOrigins("*");
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry)
+    {
+        registry.addHandler(webSocketHandler, "/ws/execute").setAllowedOrigins("*");
     }
 }

@@ -151,7 +151,7 @@ POST http://localhost:8081/api/auth/guest
 
 ###Test protected route with Google token###
 POST http://localhost:8081/api/execute
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJndWVzdF9kYWVlNWIwMi0zYTkwLTQzNDQtOGNmMy1kNjZhMjM1NTNkYjQiLCJpYXQiOjE3NzI5MjI2NTEsImV4cCI6MTc3MzAwOTA1MX0._UjokmXVVe2RYQ1dDsYFQUruINa7Yw-SSB6dUL3Bu-E
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzczMDg0OTA2LCJleHAiOjE3NzMxNzEzMDZ9.Xpq4fKkf6OxvTVK51LwHbnwo1b1R4Kdto4FevWxAOU4
 Content-Type: application/json
 
 {
