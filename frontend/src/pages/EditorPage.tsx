@@ -95,11 +95,17 @@ const EditorPage: React.FC = () => {
 
   useEffect(() => {
     if (!result) return;
+    // Only treat as stdin-required if it's a runtime stdin error, not a compile error.
+    // Java compile errors (exit 1) also contain 'end of file' in stderr — exclude them.
+    const isCompileError = result.exitCode === 1 &&
+      (result.stderr?.includes('error:') || result.stderr?.includes('error:'));
     const stdinRequired =
-      result.errorType === 'STDIN_REQUIRED' ||
-      result.stderr?.includes('EOFError') ||
-      result.stderr?.includes('NoSuchElementException') ||
-      result.stderr?.includes('end of file');
+      !isCompileError && (
+        result.errorType === 'STDIN_REQUIRED' ||
+        result.stderr?.includes('EOFError') ||
+        result.stderr?.includes('NoSuchElementException') ||
+        (result.stderr?.includes('end of file') && !result.stderr?.includes('error:'))
+      );
     if (stdinRequired) {
       setInteractiveSnapshot({ code: codeRef.current, language: langRef.current });
       setInteractiveKey((k) => k + 1);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -10,12 +10,35 @@ interface InteractiveTerminalProps {
 
 const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, code }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const termRef = useRef<Terminal | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    const term = termRef.current;
+    if (!term) return;
+    const sel = term.getSelection();
+    const text = sel || '';
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const term = new Terminal({
       cursorBlink: true,
+      allowProposedApi: true,
       fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", Menlo, Consolas, monospace',
       fontSize: 13,
       lineHeight: 1.5,
@@ -46,6 +69,7 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(containerRef.current);
+    termRef.current = term;
     fitAddon.fit();
 
     const wsBase = (import.meta.env.VITE_API_BASE_URL as string ?? 'http://localhost:8081')
@@ -112,7 +136,9 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
         ws.close();
       }
       term.dispose();
+      termRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -123,7 +149,13 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           Live
         </span>
-        <span className="ml-auto text-xs text-zinc-600">60 s max · Ctrl+C to interrupt</span>
+        <span className="text-xs text-zinc-600">60 s max · Ctrl+C to interrupt</span>
+        <button
+          onClick={handleCopy}
+          className="ml-auto text-zinc-400 hover:text-zinc-100 transition-colors px-3 py-1.5 rounded hover:bg-zinc-700 font-medium text-sm"
+        >
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
       </div>
 
       <div ref={containerRef} className="flex-1 overflow-hidden p-2" />

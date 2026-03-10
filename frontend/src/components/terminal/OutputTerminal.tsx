@@ -18,7 +18,8 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobSta
   const status = result ? deriveStatus(result) : undefined;
 
   const handleCopy = async () => {
-    const text = result?.stdout ?? result?.stderr ?? '';
+    const parts = [result?.stdout, result?.stderr].filter(Boolean).join('\n');
+    const text = error ?? parts;
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -104,10 +105,10 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobSta
                 </span>
               </div>
               {result.stdout && (
-                <pre className="text-[#9cdcfe] whitespace-pre-wrap break-words">{formatOutput(result.stdout)}</pre>
+                <pre className="text-[#9cdcfe] whitespace-pre-wrap break-words select-text">{formatOutput(result.stdout)}</pre>
               )}
               {result.stderr && (
-                <pre className="text-red-400 whitespace-pre-wrap break-words mt-2">{result.stderr}</pre>
+                <pre className="text-red-400 whitespace-pre-wrap break-words select-text mt-2">{result.stderr}</pre>
               )}
             </div>
           )}
