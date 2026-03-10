@@ -5,33 +5,14 @@ interface TerminalHeaderProps {
   executionTime?: number;
   onCopy: () => void;
   copied?: boolean;
-  activeTab: 'output' | 'problems';
-  onTabChange: (tab: 'output' | 'problems') => void;
 }
 
 const TerminalHeader: React.FC<TerminalHeaderProps> = ({
-  status, executionTime, onCopy, copied, activeTab, onTabChange,
+  status, executionTime, onCopy, copied,
 }) => (
-  <div className="shrink-0 flex items-center h-10 bg-[#252526] border-b border-[#1a1a1a] text-sm select-none">
-
-    <div className="flex items-end h-full">
-      {(['output', 'problems'] as const).map((tab) => (
-        <button
-          key={tab}
-          onClick={() => onTabChange(tab)}
-          className={`h-9 px-5 font-medium capitalize transition-colors border-t-2 ${
-            activeTab === tab
-              ? 'text-zinc-200 bg-[#1e1e1e] border-t-blue-500'
-              : 'text-zinc-500 hover:text-zinc-300 bg-transparent border-t-transparent hover:bg-zinc-800/30'
-          }`}
-        >
-          {tab === 'output' ? 'Output' : 'Problems'}
-        </button>
-      ))}
-    </div>
-
-    {activeTab === 'output' && (
-      <div className="ml-auto flex items-center gap-2 px-3">
+  <div className="shrink-0 flex items-center h-10 bg-[#252526] border-b border-[#1a1a1a] text-sm select-none px-3 gap-2">
+    <span className="text-zinc-400 font-medium text-xs uppercase tracking-widest">Output</span>
+    <div className="ml-auto flex items-center gap-2">
         {status && (
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-xs uppercase tracking-wide ${
             status === 'SUCCESS' ? 'bg-green-500/15 text-green-400' :
@@ -55,7 +36,6 @@ const TerminalHeader: React.FC<TerminalHeaderProps> = ({
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-    )}
   </div>
 );
 

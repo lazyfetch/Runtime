@@ -1,25 +1,25 @@
 package com.runtime.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.runtime.jobs.JobProducer;
-import com.runtime.model.ApiResponse;
-import com.runtime.model.CodeExecutionRequest;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Service;
-
 import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.runtime.jobs.JobProducer;
+import com.runtime.model.ApiResponse;
+import com.runtime.model.CodeExecutionRequest;
+
 @Service
 @ConditionalOnProperty(name = "redis.enabled", havingValue = "true")
-
 public class ExecutionService
 {
-
     private final JobProducer jobProducer;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -38,46 +38,50 @@ public class ExecutionService
         return HexFormat.of().formatHex(hash);
     }
 
-    public ApiResponse<String> execute(CodeExecutionRequest request)
+    public ApiResponse<String> execute(CodeExecutionRequest request, Long userId)
     {
         try
         {
             String stdin = request.getStdin() != null ? request.getStdin() : "";
             String cacheKey = "cache:" + hashRequest(request.getCode(), request.getLanguage(), stdin);
 
-            // Check cache if hit skip queue entirely
             String cachedResult = redisTemplate.opsForValue().get(cacheKey);
             if (cachedResult != null)
             {
                 System.out.println("Cache hit! Returning cached result.");
                 String jobId = UUID.randomUUID().toString();
-                redisTemplate.opsForValue().set("result:" + jobId, cachedResult);
-                redisTemplate.opsForValue().set("status:" + jobId, "COMPLETED");
-
-                redisTemplate.expire("result:" + jobId, Duration.ofHours(1));
-                redisTemplate.expire("status:" + jobId, Duration.ofHours(1));
-
+                redisTemplate.opsForValue().set("result:" + jobId, cachedResult, Duration.ofHours(1));
+                redisTemplate.opsForValue().set("status:" + jobId, "COMPLETED", Duration.ofHours(1));
                 return ApiResponse.success("Job submitted", jobId);
             }
 
-            // Cache miss: queue the job
             String jobId = UUID.randomUUID().toString();
-            String jobData = objectMapper.writeValueAsString(Map.of(
-                    "jobId", jobId,
-                    "code", request.getCode(),
-                    "language", request.getLanguage(),
-                    "stdin", stdin,
-                    "cacheKey", cacheKey
-            ));
+            Map<String, String> jobDataMap = new HashMap<>();
+            jobDataMap.put("jobId", jobId);
+            jobDataMap.put("code", request.getCode());
+            jobDataMap.put("language", request.getLanguage());
+            jobDataMap.put("stdin", stdin);
+            jobDataMap.put("cacheKey", cacheKey);
+            if (userId != null) jobDataMap.put("userId", userId.toString());
+            if (request.getProjectId() != null) jobDataMap.put("projectId", request.getProjectId().toString());
 
+            String jobData = objectMapper.writeValueAsString(jobDataMap);
             redisTemplate.opsForValue().set("status:" + jobId, "QUEUED");
             jobProducer.submitJob(jobData);
             return ApiResponse.success("Job submitted", jobId);
-
         }
         catch (Exception e)
         {
             return ApiResponse.error("Failed to submit job: " + e.getMessage());
         }
+    }
+
+    public ApiResponse<String> getResult(String jobId)
+    {
+        String status = redisTemplate.opsForValue().get("status:" + jobId);
+        if (status == null) return ApiResponse.error("Invalid jobId");
+        if ("QUEUED".equals(status) || "RUNNING".equals(status)) return ApiResponse.success(status, null);
+        String result = redisTemplate.opsForValue().get("result:" + jobId);
+        return ApiResponse.success(status, result);
     }
 }

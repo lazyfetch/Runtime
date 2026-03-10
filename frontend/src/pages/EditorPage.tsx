@@ -24,7 +24,7 @@ const LANG_EXT: Record<Language, string> = {
 const EditorPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { result, loading: executing, run, clearResult } = useCodeExecution();
+  const { result, loading: executing, jobStatus, run, clearResult } = useCodeExecution();
   const { editProject } = useProjects();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -272,25 +272,25 @@ const EditorPage: React.FC = () => {
                   code={interactiveSnapshot.code}
                 />
               ) : (
-                <OutputTerminal result={result} loading={executing} />
+                <OutputTerminal result={result} loading={executing} jobStatus={jobStatus} />
               )}
             </div>
           </>
         )}
       </div>
 
-      <div className="shrink-0 flex items-center gap-3 px-4 h-7 bg-blue-700 text-xs text-blue-100 select-none">
+      <div className="shrink-0 flex items-center gap-3 px-4 h-7 bg-[#1a2d47] text-xs text-slate-300 select-none">
         <span className="font-semibold truncate max-w-[200px]">{projectTitle || 'Untitled'}</span>
-        <span className="text-blue-300/40">│</span>
+        <span className="text-slate-500">│</span>
         <span>{language.toUpperCase()}</span>
-        <span className="text-blue-300/40">│</span>
+        <span className="text-slate-500">│</span>
         <span>UTF-8</span>
-        <span className="text-blue-300/40">│</span>
+        <span className="text-slate-500">│</span>
         <span>LF</span>
         <div className="ml-auto flex items-center gap-3">
-          {executing && <span className="text-blue-200/70 animate-pulse">Running…</span>}
+          {executing && <span className="text-slate-400/70 animate-pulse">Running…</span>}
           <span>Zoom {ZOOM_LEVELS[zoomIndex]}%</span>
-          <span className="text-blue-300/40">│</span>
+          <span className="text-slate-500">│</span>
           <span>Spaces: 4</span>
         </div>
       </div>

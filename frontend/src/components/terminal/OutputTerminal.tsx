@@ -8,17 +8,27 @@ import { formatOutput } from '../../utils/formatOutput';
 interface OutputTerminalProps {
   result: ExecutionResult | null;
   loading: boolean;
+  jobStatus?: 'QUEUED' | 'RUNNING' | null;
 }
 
-const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
+const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobStatus }) => {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'output' | 'problems'>('output');
 
   const status = result ? deriveStatus(result) : undefined;
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const text = result?.stdout ?? result?.stderr ?? '';
-    navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -30,16 +40,26 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
         executionTime={result?.executionTime}
         onCopy={handleCopy}
         copied={copied}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
       />
 
-      {activeTab === 'output' && (
-        <div className="flex-1 overflow-auto p-5 font-mono text-sm leading-relaxed">
+      <div className="flex-1 overflow-auto p-5 font-mono text-sm leading-relaxed">
           {loading && (
-            <div className="flex items-center gap-3 text-zinc-500">
-              <Loader size="sm" />
-              <span>Executing…</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 text-zinc-500">
+                <Loader size="sm" />
+                <span className="font-mono text-xs">
+                  {jobStatus === 'QUEUED' && 'Queued — waiting for worker…'}
+                  {jobStatus === 'RUNNING' && 'Running…'}
+                  {!jobStatus && 'Executing…'}
+                </span>
+              </div>
+              {jobStatus && (
+                <div className="flex items-center gap-1.5 pl-0.5">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${
+                    jobStatus === 'QUEUED' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-400'
+                  }`}>{jobStatus}</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -80,20 +100,7 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {activeTab === 'problems' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-9 h-9 text-zinc-800">
-            <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
-          </svg>
-          <div>
-            <p className="text-zinc-500 text-sm font-medium">No problems detected</p>
-            <p className="text-zinc-700 text-xs mt-1">Errors and warnings will appear here</p>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

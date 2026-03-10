@@ -1,18 +1,24 @@
 package com.runtime.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.runtime.engine.DockerExecutorUtil;
-import com.runtime.model.InteractiveSession;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.runtime.engine.DockerExecutorUtil;
+import com.runtime.model.InteractiveSession;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -23,6 +29,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final Map<String, InteractiveSession> sessions = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> ttlFutures = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
+    private final Semaphore semaphore = new Semaphore(50);
 
     private static final long MAX_OUTPUT_BYTES = 1_048_576L;
     private static final int TTL_SECONDS = 60;
@@ -43,6 +50,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
         InteractiveSession interactiveSession = sessions.get(sessionId);
 
         if (interactiveSession == null) {
+            if (!semaphore.tryAcquire()) {
+                try {
+                    session.sendMessage(new TextMessage("Server at capacity — please try again shortly.\r\n"));
+                    session.close(CloseStatus.SERVICE_OVERLOAD);
+                } catch (IOException ignored) {}
+                return;
+            }
+            boolean sessionRegistered = false;
             try {
                 Map<?, ?> payload = objectMapper.readValue(message.getPayload(), Map.class);
                 String code = (String) payload.get("code");
@@ -94,6 +109,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 // Store killed flag in session so cleanupSession can set it
                 newSession.setKilledFlag(killed);
                 sessions.put(sessionId, newSession);
+                sessionRegistered = true;
 
                 ScheduledFuture<?> ttl = scheduler.schedule(() -> {
                     try {
@@ -110,6 +126,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 ttlFutures.put(sessionId, ttl);
 
             } catch (Exception e) {
+                if (!sessionRegistered) semaphore.release();
                 try {
                     session.sendMessage(new TextMessage("Error: Failed to start session: " + e.getMessage() + "\r\n"));
                     session.close(CloseStatus.SERVER_ERROR);
@@ -146,7 +163,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         InteractiveSession s = sessions.remove(sessionId);
         if (s == null) return;
 
-        // Set killed flag to stop output callback
+        semaphore.release();
+
         if (s.getKilledFlag() != null) s.getKilledFlag().set(true);
 
         try { s.getDockerInput().close(); } catch (IOException ignored) {}
