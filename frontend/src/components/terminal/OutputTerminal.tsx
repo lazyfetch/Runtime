@@ -9,9 +9,10 @@ interface OutputTerminalProps {
   result: ExecutionResult | null;
   loading: boolean;
   jobStatus?: 'QUEUED' | 'RUNNING' | null;
+  error?: string | null;
 }
 
-const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobStatus }) => {
+const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobStatus, error }) => {
   const [copied, setCopied] = useState(false);
 
   const status = result ? deriveStatus(result) : undefined;
@@ -63,7 +64,17 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobSta
             </div>
           )}
 
-          {!loading && !result && (
+          {!loading && error && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-[11px] mb-2 pb-3 border-b border-zinc-900">
+                <span className="font-mono text-red-600">✗</span>
+                <span className="text-zinc-600">Execution failed</span>
+              </div>
+              <pre className="text-red-400 whitespace-pre-wrap break-words text-xs">{error}</pre>
+            </div>
+          )}
+
+          {!loading && !error && !result && (
             <div className="flex flex-col gap-3 pt-1">
               <div className="flex items-center gap-2">
                 <span className="text-green-900 select-none">❯</span>
@@ -79,7 +90,7 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading, jobSta
             </div>
           )}
 
-          {!loading && result && (
+          {!loading && !error && result && (
             <div>
               <div className="flex items-center gap-2 text-[11px] mb-4 pb-3 border-b border-zinc-900">
                 <span className={`font-mono ${status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'}`}>

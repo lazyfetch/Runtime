@@ -24,7 +24,7 @@ const LANG_EXT: Record<Language, string> = {
 const EditorPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { result, loading: executing, jobStatus, run, clearResult } = useCodeExecution();
+  const { result, loading: executing, jobStatus, error: execError, run, clearResult } = useCodeExecution();
   const { editProject } = useProjects();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -272,7 +272,7 @@ const EditorPage: React.FC = () => {
                   code={interactiveSnapshot.code}
                 />
               ) : (
-                <OutputTerminal result={result} loading={executing} jobStatus={jobStatus} />
+                <OutputTerminal result={result} loading={executing} jobStatus={jobStatus} error={execError} />
               )}
             </div>
           </>

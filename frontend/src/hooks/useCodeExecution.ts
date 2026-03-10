@@ -31,8 +31,10 @@ export const useCodeExecution = () => {
 
         if (message === 'RUNNING') setJobStatus('RUNNING');
 
-        if (message === 'COMPLETED' && data) {
+        if (message === 'COMPLETED') {
+          if (!data) { setError('No result returned from server.'); return; }
           const inner = JSON.parse(data) as ApiResponse<ExecutionResult>;
+          if (!inner.data) { setError(inner.message || 'Execution returned no output.'); return; }
           setResult(inner.data);
           return;
         }
