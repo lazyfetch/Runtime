@@ -16,8 +16,9 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-xl p-8 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center relative" style={{ backgroundImage: 'url(/login-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div className="relative z-10 w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-xl p-8 shadow-xl">
         <h1 className="text-white text-2xl font-bold mb-1">Welcome back</h1>
         <p className="text-zinc-400 text-sm mb-6">Sign in to your Runtime account</p>
 

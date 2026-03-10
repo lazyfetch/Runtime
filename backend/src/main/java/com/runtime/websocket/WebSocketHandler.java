@@ -95,7 +95,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
                             }
                             try {
                                 if (session.isOpen()) {
-                                    session.sendMessage(new TextMessage(outputBytes));
+                                    // xterm.js needs \r\n — bare \n moves cursor down but not
+                                    // back to column 0, causing a staircase effect.
+                                    String text = new String(outputBytes, java.nio.charset.StandardCharsets.UTF_8);
+                                    String normalized = text.replace("\r\n", "\n")
+                                                           .replace("\r", "\n")
+                                                           .replace("\n", "\r\n");
+                                    session.sendMessage(new TextMessage(normalized));
                                 }
                             } catch (IOException e) {
                                 if (!killed.get()) {

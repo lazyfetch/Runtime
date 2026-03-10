@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useSubmissionHistory } from '../../hooks/useSubmissionHistory';
 import { formatDate, formatExecutionTime } from '../../utils/formatOutput';
 import { languageLabels } from '../../utils/languageMap';
@@ -13,9 +14,10 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ open, onClose }) 
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="ml-auto w-full max-w-md bg-zinc-900 border-l border-zinc-700 h-full flex flex-col shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 z-[999] flex">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="ml-auto relative w-full max-w-md bg-zinc-900 border-l border-zinc-700 h-full flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-700">
           <h2 className="text-white font-semibold">Submission History</h2>
           <button className="text-zinc-400 hover:text-white" onClick={onClose}>✕</button>
@@ -41,7 +43,8 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ open, onClose }) 
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
