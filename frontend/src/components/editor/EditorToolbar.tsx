@@ -19,17 +19,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   projectTitle, zoom, onZoomIn, onZoomOut, onZoomReset,
 }) => (
   <div className="shrink-0 flex items-center gap-2 px-4 h-11 bg-zinc-900 border-b border-zinc-800">
-    {/* Project title */}
     <span className="text-sm text-zinc-300 font-medium truncate max-w-[200px]">
       {projectTitle || 'Untitled'}
     </span>
 
     <div className="w-px h-5 bg-zinc-700 mx-1" />
 
-    {/* Language selector */}
     <LanguageSelector value={language} onChange={onLanguageChange} />
 
-    {/* Zoom controls — right-aligned */}
     <div className="ml-auto flex items-center gap-0.5">
       <button
         onClick={onZoomOut}
@@ -50,7 +47,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     <div className="w-px h-5 bg-zinc-700 mx-2" />
 
-    {/* Actions */}
     <button
       onClick={onClear}
       className="h-7 px-3 text-xs text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"

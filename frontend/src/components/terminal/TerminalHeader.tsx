@@ -14,7 +14,6 @@ const TerminalHeader: React.FC<TerminalHeaderProps> = ({
 }) => (
   <div className="shrink-0 flex items-center h-10 bg-[#252526] border-b border-[#1a1a1a] text-sm select-none">
 
-    {/* Panel tabs */}
     <div className="flex items-end h-full">
       {(['output', 'problems'] as const).map((tab) => (
         <button
@@ -31,7 +30,6 @@ const TerminalHeader: React.FC<TerminalHeaderProps> = ({
       ))}
     </div>
 
-    {/* Right — status + copy, only on output tab */}
     {activeTab === 'output' && (
       <div className="ml-auto flex items-center gap-2 px-3">
         {status && (

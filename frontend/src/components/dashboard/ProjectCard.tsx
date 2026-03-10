@@ -17,7 +17,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
       className={`group relative bg-zinc-900 border border-zinc-800 border-l-[3px] ${colors.border} rounded-xl p-5 flex flex-col gap-5 hover:bg-zinc-800/60 hover:border-zinc-700 transition-all duration-150 cursor-pointer`}
       onClick={() => navigate(`/editor/${project.id}`)}
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-white font-semibold text-base truncate leading-snug">{project.title}</h3>
@@ -29,7 +28,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
         <img src={languageIcons[project.language]} alt="" className="w-9 h-9 opacity-10 group-hover:opacity-25 transition-opacity shrink-0 mt-0.5" />
       </div>
 
-      {/* Code preview */}
       {project.code ? (
         <pre className="text-xs text-zinc-400 bg-zinc-950/80 border border-zinc-800 rounded-lg px-3.5 py-3 overflow-hidden font-mono leading-relaxed line-clamp-3 select-none">
           {project.code.split('\n').slice(0, 3).join('\n')}
@@ -40,7 +38,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
         </div>
       )}
 
-      {/* Footer */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-zinc-600">Updated {formatDate(project.updatedAt)}</span>
         <button

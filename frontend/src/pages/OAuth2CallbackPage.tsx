@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import Loader from '../components/common/Loader';
 
-// Spring OAuth2SuccessHandler redirects to /oauth2/callback?token=<jwt>
-// We parse the token, decode the payload for display info, then store and navigate.
 const parseJwt = (token: string): Record<string, string> => {
   try {
     const payload = token.split('.')[1];
@@ -28,7 +26,6 @@ const OAuth2CallbackPage: React.FC = () => {
     }
 
     const payload = parseJwt(token);
-    // JWT subject (sub) is the email; name may be a separate claim or derived
     const email = payload.sub ?? payload.email ?? '';
     const name = payload.name ?? email.split('@')[0] ?? 'User';
 

@@ -7,16 +7,14 @@ export interface CodeExecutionRequest {
   projectId?: number;
 }
 
-/** Matches backend ExecutionResult */
 export interface ExecutionResult {
   stdout: string;
   stderr: string;
-  errorType: string; // "NONE" | "TIMEOUT" | "RUNTIME_ERROR" | "COMPILE_ERROR"
+  errorType: string;
   exitCode: number;
-  executionTime: number; // milliseconds
+  executionTime: number;
 }
 
-/** Matches backend ApiResponse<T> */
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

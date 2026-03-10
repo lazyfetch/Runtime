@@ -8,11 +8,6 @@ interface InteractiveTerminalProps {
   code: string;
 }
 
-/**
- * Uses xterm.js + a raw WebSocket to /ws/execute for interactive code execution.
- * On mount it immediately connects and sends the init message.
- * The parent should remount this (via `key` prop) for each new run.
- */
 const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, code }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,8 +48,6 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
     term.open(containerRef.current);
     fitAddon.fit();
 
-    // term.write('\x1b[90m Connecting to runtime engine…\x1b[0m\r\n\r\n');
-
     const wsBase = (import.meta.env.VITE_API_BASE_URL as string ?? 'http://localhost:8081')
       .replace('https://', 'wss://')
       .replace('http://', 'ws://');
@@ -77,15 +70,11 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
       term.write('\x1b[31m Connection error — is the backend running?\x1b[0m\r\n');
     };
 
-    // Line-buffer input: echo characters locally, send the whole line only on Enter.
-    // Sending char-by-char causes programs like input() to receive each keystroke
-    // as a separate stdin read before the user has finished typing.
     let lineBuffer = '';
 
     term.onData((data: string) => {
       if (ws.readyState !== WebSocket.OPEN) return;
 
-      // Ctrl+C — send interrupt immediately (no buffering)
       if (data === '\x03') {
         ws.send('\x03');
         term.write('^C\r\n');
@@ -93,27 +82,23 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
         return;
       }
 
-      // Backspace / Delete — remove last char from buffer and erase on screen
       if (data === '\x7f' || data === '\b') {
         if (lineBuffer.length > 0) {
           lineBuffer = lineBuffer.slice(0, -1);
-          term.write('\b \b'); // move back, overwrite with space, move back again
+          term.write('\b \b');
         }
         return;
       }
 
-      // Enter — backend appends \n itself, so send the raw buffer only
       if (data === '\r') {
-        ws.send(lineBuffer); // backend does: (input + "\n").getBytes()
+        ws.send(lineBuffer);
         term.write('\r\n');
         lineBuffer = '';
         return;
       }
 
-      // Ignore other control characters
       if (data < ' ') return;
 
-      // Printable character — buffer it and echo it so the user sees what they type
       lineBuffer += data;
       term.write(data);
     });
@@ -128,11 +113,10 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
       }
       term.dispose();
     };
-  }, []); // deps empty — parent remounts via key prop for each run
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-[#0e0e0e]">
-      {/* Header */}
       <div className="shrink-0 flex items-center h-10 bg-[#252526] border-b border-[#1a1a1a] px-4 gap-3 select-none">
         <span className="text-sm font-medium text-zinc-300">Interactive Terminal</span>
         <span className="flex items-center gap-1.5 text-xs text-green-400">
@@ -142,7 +126,6 @@ const InteractiveTerminal: React.FC<InteractiveTerminalProps> = ({ language, cod
         <span className="ml-auto text-xs text-zinc-600">60 s max · Ctrl+C to interrupt</span>
       </div>
 
-      {/* xterm.js mount point — padding via xterm theme */}
       <div ref={containerRef} className="flex-1 overflow-hidden p-2" />
     </div>
   );

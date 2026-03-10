@@ -27,6 +27,9 @@ public class SecurityConfig
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
+    @Value("#{'${allowed.origins}'.split(',')}")
+    private List<String> allowedOrigins;
+
     @Value("${frontend.url}")
     private String frontendUrl;
 
@@ -40,7 +43,7 @@ public class SecurityConfig
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(frontendUrl));
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

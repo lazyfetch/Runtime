@@ -21,7 +21,6 @@ const LoginPage: React.FC = () => {
         <h1 className="text-white text-2xl font-bold mb-1">Welcome back</h1>
         <p className="text-zinc-400 text-sm mb-6">Sign in to your Runtime account</p>
 
-        {/* Google OAuth — browser redirect to Spring backend */}
         <a
           href={GOOGLE_AUTH_URL}
           className="flex items-center justify-center gap-2 w-full bg-white text-zinc-900 font-medium rounded-md py-2 text-sm hover:bg-zinc-100 transition-colors mb-4"

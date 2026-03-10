@@ -5,21 +5,36 @@ import { useAuthContext } from '../../context/AuthContext';
 const Navbar: React.FC = () => {
   const { isAuthenticated } = useAuthContext();
   const { pathname } = useLocation();
-  const isDashboard = pathname === '/dashboard';
+
+  const navLink = (to: string, label: string) => (
+    <Link
+      to={to}
+      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+        pathname === to ? 'text-white bg-zinc-800' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+      }`}
+    >
+      {label}
+    </Link>
+  );
 
   return (
-    <nav className="h-12 bg-zinc-900 border-b border-zinc-700 flex items-center px-4 gap-4 shrink-0">
-      <Link to={isAuthenticated ? '/dashboard' : '/login'} className="text-white font-bold text-base tracking-tight">
+    <nav className="h-12 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800 flex items-center px-5 gap-4 shrink-0 sticky top-0 z-40">
+      <Link
+        to={isAuthenticated ? '/dashboard' : '/login'}
+        className="flex items-center gap-2 text-white font-bold text-sm tracking-tight shrink-0 mr-2"
+      >
+        <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-[11px] font-black select-none">R</div>
         Runtime
       </Link>
+
       {isAuthenticated && (
         <>
-          <div className="flex gap-2 ml-2">
-            {!isDashboard && (
-              <Link to="/dashboard" className="text-zinc-400 hover:text-white text-sm">Dashboard</Link>
-            )}
+          <div className="h-4 w-px bg-zinc-700" />
+          <div className="flex items-center gap-1">
+            {navLink('/dashboard', 'Dashboard')}
+            {navLink('/editor/new', 'New File')}
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
             <ProfilePopover />
           </div>
         </>

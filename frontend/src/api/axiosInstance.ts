@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// In-memory token storage — cleared on page refresh (acceptable until backend supports cookies)
 let _token: string | null = null;
 
 export const setAuthToken = (token: string | null) => {
@@ -12,7 +11,6 @@ const axiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Inject Bearer token on every request if we have one
 axiosInstance.interceptors.request.use((config) => {
   if (_token) {
     config.headers.Authorization = `Bearer ${_token}`;
@@ -20,7 +18,6 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401, redirect to login — but only if not already on a public page
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {

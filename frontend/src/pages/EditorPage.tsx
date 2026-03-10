@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CodeEditor from '../components/editor/CodeEditor';
 import OutputTerminal from '../components/terminal/OutputTerminal';
@@ -28,7 +28,6 @@ const EditorPage: React.FC = () => {
   const { editProject } = useProjects();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Refs so the keyboard shortcut always sees fresh values without re-subscribing
   const codeRef = useRef('');
   const langRef = useRef<Language>('python');
 
@@ -39,9 +38,7 @@ const EditorPage: React.FC = () => {
   const [zoomIndex, setZoomIndex] = useState(2);
   const [editorWidthPct, setEditorWidthPct] = useState(62);
   const [showOutput, setShowOutput] = useState(true);
-  // interactiveKey === 0 means REST output panel; >0 means xterm.js session (incremented each run)
   const [interactiveKey, setInteractiveKey] = useState(0);
-  // Snapshot of code+lang at the moment Run was clicked, used for the WS session
   const [interactiveSnapshot, setInteractiveSnapshot] = useState<{ code: string; language: string } | null>(null);
 
   useEffect(() => { codeRef.current = code; }, [code]);
@@ -62,7 +59,6 @@ const EditorPage: React.FC = () => {
       .finally(() => setPageLoading(false));
   }, [projectId, navigate]);
 
-  // Ctrl+Enter / Cmd+Enter to run
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !executing) {
@@ -72,7 +68,6 @@ const EditorPage: React.FC = () => {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executing]);
 
   const handleLanguageChange = (lang: Language) => {
@@ -85,9 +80,6 @@ const EditorPage: React.FC = () => {
     const c = codeRef.current;
     const lang = langRef.current;
 
-    // C/C++ stdin reads silently succeed with garbage when stdin is EOF —
-    // no error is emitted, so REST-then-detect doesn't work. Pre-scan and
-    // go directly to WebSocket if any stdin pattern is found in the code.
     const CPP_STDIN = /\bcin\s*>>|\bscanf\s*\(|\bscanf_s\s*\(|\bgets\s*\(|\bfgets\s*\(|\bgetchar\s*\(|\bgetline\s*\(\s*cin|\bcin\.get\s*\(|\bcin\.ignore\s*\(/;
     if ((lang === 'c' || lang === 'cpp') && CPP_STDIN.test(c)) {
       setInteractiveSnapshot({ code: c, language: lang });
@@ -96,16 +88,11 @@ const EditorPage: React.FC = () => {
       return;
     }
 
-    // All other languages: run via REST first; if backend signals stdin is
-    // required the useEffect below will silently swap to the interactive terminal.
     setInteractiveKey(0);
     setShowOutput(true);
     run({ code: c, language: lang, projectId: projectId ? Number(projectId) : undefined });
   };
 
-  // Auto-switch to interactive terminal when backend signals stdin is required.
-  // Also match on stderr content directly as a fallback in case errorType ordering
-  // in the backend lets a RUNTIME_ERROR slip through before STDIN_REQUIRED.
   useEffect(() => {
     if (!result) return;
     const stdinRequired =
@@ -124,13 +111,11 @@ const EditorPage: React.FC = () => {
     clearResult();
   };
 
-  // Save code when navigating away
   useEffect(() => {
     if (!projectId) return;
     return () => {
       editProject(projectId, { code: codeRef.current, language: langRef.current }).catch(() => {});
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
@@ -163,10 +148,9 @@ const EditorPage: React.FC = () => {
   return (
     <div className="h-screen bg-[#1e1e1e] flex flex-col overflow-hidden">
 
-      {/* ── IDE Title Bar ─────────────────────────────────── */}
+
       <div className="shrink-0 h-11 bg-[#161616] border-b border-[#2a2a2a] flex items-center px-3 gap-2">
 
-        {/* Back to dashboard */}
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm px-2.5 h-8 rounded hover:bg-zinc-800 transition-colors shrink-0"
@@ -179,7 +163,6 @@ const EditorPage: React.FC = () => {
 
         <div className="w-px h-4 bg-zinc-800" />
 
-        {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-sm min-w-0">
           <span className="text-zinc-600 font-medium shrink-0">Runtime</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3 h-3 text-zinc-700 shrink-0">
@@ -188,14 +171,12 @@ const EditorPage: React.FC = () => {
           <span className="text-zinc-200 font-semibold truncate">{projectTitle || 'Untitled'}</span>
         </div>
 
-        {/* Right controls */}
         <div className="ml-auto flex items-center gap-1 shrink-0">
 
           <LanguageSelector value={language} onChange={handleLanguageChange} />
 
           <div className="w-px h-5 bg-zinc-800 mx-1" />
 
-          {/* Zoom */}
           <button
             onClick={() => setZoomIndex((i) => Math.max(i - 1, 0))}
             className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded text-lg transition-colors"
@@ -214,7 +195,6 @@ const EditorPage: React.FC = () => {
 
           <div className="w-px h-5 bg-zinc-800 mx-1" />
 
-          {/* Terminal panel toggle */}
           <button
             onClick={() => setShowOutput((v) => !v)}
             title={showOutput ? 'Hide terminal' : 'Show terminal'}
@@ -231,10 +211,6 @@ const EditorPage: React.FC = () => {
 
           <div className="w-px h-5 bg-zinc-800 mx-1" />
 
-          {/* Mode toggle removed — auto-detected from backend response */}
-
-          <div className="w-px h-5 bg-zinc-800 mx-1" />
-
           <button
             onClick={handleClear}
             className="h-8 px-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
@@ -242,7 +218,6 @@ const EditorPage: React.FC = () => {
             Reset
           </button>
 
-          {/* Run */}
           <button
             onClick={handleRun}
             disabled={executing}
@@ -265,7 +240,6 @@ const EditorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── File Tab Bar ──────────────────────────────────── */}
       <div className="shrink-0 h-10 bg-[#252526] border-b border-[#1a1a1a] flex items-end overflow-hidden">
         <div className="flex items-center gap-2 px-4 h-9 bg-[#1e1e1e] border-t-2 border-t-blue-500 border-r border-r-[#1a1a1a] text-zinc-300 text-sm cursor-default select-none shrink-0">
           <img src={languageIcons[language]} alt="" className="w-3.5 h-3.5" />
@@ -275,10 +249,8 @@ const EditorPage: React.FC = () => {
         <div className="flex-1 h-full" />
       </div>
 
-      {/* ── Editor + Output ───────────────────────────────── */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden">
 
-        {/* Editor pane */}
         <div
           style={{ width: showOutput ? `${editorWidthPct}%` : '100%' }}
           className="flex flex-col min-w-0 shrink-0"
@@ -286,7 +258,6 @@ const EditorPage: React.FC = () => {
           <CodeEditor language={language} value={code} onChange={setCode} fontSize={fontSize} />
         </div>
 
-        {/* Divider + terminal pane */}
         {showOutput && (
           <>
             <div
@@ -308,7 +279,6 @@ const EditorPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Status Bar (VS Code blue) ─────────────────────── */}
       <div className="shrink-0 flex items-center gap-3 px-4 h-7 bg-blue-700 text-xs text-blue-100 select-none">
         <span className="font-semibold truncate max-w-[200px]">{projectTitle || 'Untitled'}</span>
         <span className="text-blue-300/40">│</span>

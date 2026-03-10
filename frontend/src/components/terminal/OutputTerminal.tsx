@@ -34,7 +34,6 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
         onTabChange={setActiveTab}
       />
 
-      {/* Output tab */}
       {activeTab === 'output' && (
         <div className="flex-1 overflow-auto p-5 font-mono text-sm leading-relaxed">
           {loading && (
@@ -84,7 +83,6 @@ const OutputTerminal: React.FC<OutputTerminalProps> = ({ result, loading }) => {
         </div>
       )}
 
-      {/* Problems tab */}
       {activeTab === 'problems' && (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-9 h-9 text-zinc-800">
