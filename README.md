@@ -1,4 +1,4 @@
-# Runtime — Cloud Code Execution Platform
+# Runtime — Remote Code Execution Engine
 
 Runtime is a full-stack cloud-based code execution platform that allows users to write, run, and manage code across multiple programming languages directly in the browser. It supports both instant HTTP-based execution and fully interactive terminal sessions with live stdin/stdout streaming — all executed inside isolated Docker containers on a remote server.
 
